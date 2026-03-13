@@ -1,4 +1,4 @@
-package com.megrow.megrowbackend.entity;
+package com.megrow.megrowbackend.entities;
 
 import com.megrow.megrowbackend.enums.ItemType;
 import jakarta.persistence.*;

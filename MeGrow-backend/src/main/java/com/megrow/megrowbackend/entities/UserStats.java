@@ -1,4 +1,4 @@
-package com.megrow.megrowbackend.entity;
+package com.megrow.megrowbackend.entities;
 
 import jakarta.persistence.*;
 import lombok.*;

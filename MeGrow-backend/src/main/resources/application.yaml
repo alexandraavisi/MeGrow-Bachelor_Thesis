@@ -17,6 +17,7 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
-  jwt:
-    secret: megrow-secret-key-change-in-production-min-32-chars
-    expiration-ms: 864000000
+
+jwt:
+  secret: megrow-secret-key-change-in-production-min-32-chars
+  expiration-ms: 86400000

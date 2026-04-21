@@ -29,6 +29,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskTimeSessionRepository  taskTimeSessionRepository;
     private final UserRepository userRepository;
+    private final UserStatsService userStatsService;
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request) {
@@ -120,6 +121,8 @@ public class TaskService {
                         session.setEndedAt(OffsetDateTime.now());
                         taskTimeSessionRepository.save(session);
                     });
+
+            userStatsService.awardXPForTasks(user, task);
 
             if (task.getParentTask() != null) {
                 Task parentTask = task.getParentTask();

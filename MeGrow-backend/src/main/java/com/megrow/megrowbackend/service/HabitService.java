@@ -26,6 +26,7 @@ public class HabitService {
     private final HabitTemplateRepository  habitTemplateRepository;
     private final HabitLogRepository habitLogRepository;
     private final UserRepository userRepository;
+    private final UserStatsService userStatsService;
 
     public List<HabitResponse> getHabits() {
         User user = getCurrentUser();
@@ -67,6 +68,8 @@ public class HabitService {
                 .source(HabitSource.MANUAL)
                 .build();
         habitLogRepository.save(log);
+
+        userStatsService.awardHealthForHabit(user);
 
         return mapToResponse(habit, true);
     }

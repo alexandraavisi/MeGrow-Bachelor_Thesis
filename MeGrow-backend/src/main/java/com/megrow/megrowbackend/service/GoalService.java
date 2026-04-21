@@ -2,14 +2,10 @@ package com.megrow.megrowbackend.service;
 
 import com.megrow.megrowbackend.dto.request.CreateGoalRequest;
 import com.megrow.megrowbackend.dto.response.GoalResponse;
-import com.megrow.megrowbackend.entities.Goal;
-import com.megrow.megrowbackend.entities.GoalFitnessDetails;
-import com.megrow.megrowbackend.entities.User;
+import com.megrow.megrowbackend.entities.*;
 import com.megrow.megrowbackend.enums.GoalCategory;
 import com.megrow.megrowbackend.enums.GoalStatus;
-import com.megrow.megrowbackend.repository.GoalFitnessDetailsRepository;
-import com.megrow.megrowbackend.repository.GoalRepository;
-import com.megrow.megrowbackend.repository.UserRepository;
+import com.megrow.megrowbackend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +22,9 @@ public class GoalService {
     private final GoalRepository goalRepository;
     private final GoalFitnessDetailsRepository goalFitnessDetailsRepository;
     private final UserRepository userRepository;
+    private final AiBacklogService aiBacklogService;
+    private final GoalBacklogItemRepository goalBacklogItemRepository;
+    private final UserProfileRepository userProfileRepository;
 
     @Transactional
     public GoalResponse createGoal(CreateGoalRequest request){
@@ -59,6 +58,11 @@ public class GoalService {
                 .status(GoalStatus.ACTIVE)
                 .build();
         goalRepository.save(goal);
+
+        UserProfile profile = userProfileRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        List<GoalBacklogItem> backlogItems = aiBacklogService.generateBacklog(goal, profile);
+        backlogItems.forEach(goalBacklogItemRepository::save);
 
         GoalFitnessDetails fitnessDetails = null;
         if (request.getCategory() == GoalCategory.FITNESS) {

@@ -1,6 +1,7 @@
 package com.megrow.megrowbackend.controller;
 
 import com.megrow.megrowbackend.dto.request.CreateCustomHabitRequest;
+import com.megrow.megrowbackend.dto.request.StepsRequest;
 import com.megrow.megrowbackend.dto.response.HabitResponse;
 import com.megrow.megrowbackend.service.HabitService;
 import jakarta.validation.Valid;
@@ -31,6 +32,12 @@ public class HabitController {
     public ResponseEntity<HabitResponse> createCustomHabit(
             @Valid @RequestBody CreateCustomHabitRequest request) {
         return ResponseEntity.ok(habitService.createCustomHabit(request));
+    }
+
+    @PostMapping("/steps")
+    public ResponseEntity<HabitResponse> logSteps(
+            @Valid @RequestBody StepsRequest request) {
+        return ResponseEntity.ok(habitService.logSteps(request));
     }
 
 }

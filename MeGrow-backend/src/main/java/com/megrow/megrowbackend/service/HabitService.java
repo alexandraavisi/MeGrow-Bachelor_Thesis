@@ -1,6 +1,7 @@
 package com.megrow.megrowbackend.service;
 
 import com.megrow.megrowbackend.dto.request.CreateCustomHabitRequest;
+import com.megrow.megrowbackend.dto.request.StepsRequest;
 import com.megrow.megrowbackend.dto.response.HabitResponse;
 import com.megrow.megrowbackend.entities.HabitLog;
 import com.megrow.megrowbackend.entities.HabitTemplate;
@@ -88,6 +89,39 @@ public class HabitService {
         habitTemplateRepository.save(habit);
 
         return mapToResponse(habit, false);
+    }
+
+    @Transactional
+    public HabitResponse logSteps(StepsRequest request) {
+        User user = getCurrentUser();
+        LocalDate today = LocalDate.now();
+
+        HabitTemplate walkHabit = habitTemplateRepository.findByCode("WALK_STEPS")
+                .orElseThrow(() -> new RuntimeException("Walk habit not found"));
+
+        int targetSteps = 6000;
+
+        if (request.getSteps() < targetSteps) {
+            return mapToResponse(walkHabit, false);
+        }
+
+        if (habitLogRepository.existsByUserIdAndHabitTemplateIdAndLogDate(
+                user.getId(), walkHabit.getId(), today)) {
+            return mapToResponse(walkHabit, true);
+        }
+
+        HabitLog log = HabitLog.builder()
+                .user(user)
+                .habitTemplate(walkHabit)
+                .logDate(today)
+                .isCompleted(true)
+                .source(HabitSource.AUTO_STEPS)
+                .build();
+        habitLogRepository.save(log);
+
+        userStatsService.awardHealthForHabit(user);
+
+        return mapToResponse(walkHabit, true);
     }
 
     private HabitResponse mapToResponse(HabitTemplate habit, boolean completedToday) {

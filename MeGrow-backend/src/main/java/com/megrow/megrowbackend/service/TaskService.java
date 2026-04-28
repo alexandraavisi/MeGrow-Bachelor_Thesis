@@ -200,6 +200,7 @@ public class TaskService {
         return mapToResponse(task);
     }
 
+    @Transactional
     public SurpriseTaskOptionsResponse getSurpriseOptions(UUID taskId) {
         User user = getCurrentUser();
         Task task = taskRepository.findById(taskId)

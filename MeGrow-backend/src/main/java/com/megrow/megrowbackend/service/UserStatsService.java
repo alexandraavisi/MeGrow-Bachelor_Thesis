@@ -140,7 +140,7 @@ public class UserStatsService {
         return (double) completedTasks / totalTasks;
     }
 
-    public Difficulty adjusDifficulty(User user, Difficulty baseDifficulty) {
+    public Difficulty adjustDifficulty(User user, Difficulty baseDifficulty) {
         double rate = calculateCompletionRate(user);
 
         if(rate >= 0.8) {

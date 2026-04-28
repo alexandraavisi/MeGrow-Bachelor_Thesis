@@ -99,6 +99,24 @@ public class DailyPlanService {
                         .build();
                 surpriseTaskOptionRepository.save(option1);
                 surpriseTaskOptionRepository.save(option2);
+                totalMinutes += surpriseTask.getEstimatedMinutes();
+
+                for (int i = 2; i < pendingItems.size(); i++) {
+                    GoalBacklogItem item = pendingItems.get(i);
+                    Task task = Task.builder()
+                            .user(user)
+                            .goal(goal)
+                            .backlogItem(item)
+                            .source(TaskSource.GOAL_GENERATED)
+                            .title(item.getTitle())
+                            .difficulty(difficulty)
+                            .estimatedMinutes(item.getEstimatedMinutes())
+                            .scheduledDate(date)
+                            .status(TaskStatus.TODO)
+                            .build();
+                    taskRepository.save(task);
+                    totalMinutes += task.getEstimatedMinutes();
+                }
             } else {
 
                 for (GoalBacklogItem item : pendingItems) {
@@ -152,7 +170,7 @@ public class DailyPlanService {
             case EXPLORER -> gentleMode ? Difficulty.EASY : Difficulty.MEDIUM;
         };
 
-        return userStatsService.adjusDifficulty(user, baseDifficulty);
+        return userStatsService.adjustDifficulty(user, baseDifficulty);
     }
 
     private OverloadLevel calculateOverloadLevel(int totalMinutes) {

@@ -1,7 +1,9 @@
 package com.megrow.megrowbackend.controller;
 
+import com.megrow.megrowbackend.dto.request.ChooseSurpriseTaskRequest;
 import com.megrow.megrowbackend.dto.request.CreateTaskRequest;
 import com.megrow.megrowbackend.dto.request.UpdateTaskStatusRequest;
+import com.megrow.megrowbackend.dto.response.SurpriseTaskOptionsResponse;
 import com.megrow.megrowbackend.dto.response.TaskResponse;
 import com.megrow.megrowbackend.service.TaskService;
 import jakarta.validation.Valid;
@@ -55,5 +57,17 @@ public class TaskController {
     @PostMapping("/{id}/pause")
     public ResponseEntity<TaskResponse> pauseTask(@PathVariable UUID id) {
         return ResponseEntity.ok(taskService.pauseTask(id));
+    }
+
+    @GetMapping("/{id}/surprise-options")
+    public ResponseEntity<SurpriseTaskOptionsResponse> getSurpriseOptions(@PathVariable UUID id) {
+        return ResponseEntity.ok(taskService.getSurpriseOptions(id));
+    }
+
+    @PostMapping("/{id}/choose")
+    public ResponseEntity<TaskResponse> chooseSurpriseTask(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChooseSurpriseTaskRequest request) {
+        return ResponseEntity.ok(taskService.chooseSurpriseTask(id, request));
     }
 }

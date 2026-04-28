@@ -84,6 +84,9 @@ public class Task {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "is_surprise", nullable = false)
+    private boolean isSurprise = false;
+
     @PrePersist
     void prePersist() {
         this.createdAt = OffsetDateTime.now();

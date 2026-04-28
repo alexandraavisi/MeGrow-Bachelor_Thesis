@@ -3,18 +3,23 @@ package com.megrow.megrowbackend.service;
 import com.megrow.megrowbackend.entities.Task;
 import com.megrow.megrowbackend.entities.User;
 import com.megrow.megrowbackend.entities.UserStats;
+import com.megrow.megrowbackend.enums.Difficulty;
 import com.megrow.megrowbackend.enums.TaskSource;
+import com.megrow.megrowbackend.enums.TaskStatus;
+import com.megrow.megrowbackend.repository.TaskRepository;
 import com.megrow.megrowbackend.repository.UserStatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserStatsService {
     private final UserStatsRepository userStatsRepository;
+    private final TaskRepository taskRepository;
 
     @Transactional
     public void recordActivity(User user) {
@@ -110,5 +115,48 @@ public class UserStatsService {
         if (xp < 600) return 3;
         if (xp < 1000) return 4;
         return (short) (5 + (xp - 1000) / 500);
+    }
+
+    public double calculateCompletionRate(User user) {
+        LocalDate sevenDaysAgo = LocalDate.now().minusDays(7);
+
+        List<Task> recentTasks = taskRepository.findByUserIdAndScheduledDate(
+                user.getId(), sevenDaysAgo);
+
+        long totalTasks = 0;
+        long completedTasks = 0;
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = LocalDate.now().minusDays(i);
+            List<Task> dayTasks = taskRepository.findByUserIdAndScheduledDate(
+                    user.getId(), date);
+            totalTasks += dayTasks.size();
+            completedTasks += dayTasks.stream()
+                    .filter(t -> t.getStatus() == TaskStatus.DONE)
+                    .count();
+        }
+
+        if (totalTasks == 0) return 0.5;
+        return (double) completedTasks / totalTasks;
+    }
+
+    public Difficulty adjusDifficulty(User user, Difficulty baseDifficulty) {
+        double rate = calculateCompletionRate(user);
+
+        if(rate >= 0.8) {
+            return switch (baseDifficulty) {
+                case EASY -> Difficulty.MEDIUM;
+                case MEDIUM ->  Difficulty.HARD;
+                case HARD -> Difficulty.HARD;
+            };
+        } else if(rate < 0.5) {
+            return switch (baseDifficulty) {
+                case HARD -> Difficulty.MEDIUM;
+                case MEDIUM -> Difficulty.EASY;
+                case EASY ->  Difficulty.EASY;
+            };
+        }
+
+        return baseDifficulty;
     }
 }

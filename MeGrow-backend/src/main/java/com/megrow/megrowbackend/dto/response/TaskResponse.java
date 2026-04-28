@@ -31,4 +31,5 @@ public class TaskResponse {
     private OffsetDateTime createdAt;
     private UUID parentTaskId;
     private UUID goalId;
+    private boolean isSurprise;
 }

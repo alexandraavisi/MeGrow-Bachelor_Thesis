@@ -26,6 +26,7 @@ public class DailyPlanService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserStatsService userStatsService;
+    private final SurpriseTaskOptionRepository surpriseTaskOptionRepository;
 
     @Transactional
     public DailyPlanResponse getTodayPlan() {
@@ -68,26 +69,56 @@ public class DailyPlanService {
                     .findByGoalIdOrderByOrderIndexAsc(goal.getId())
                     .stream()
                     .filter(item -> !item.isCompleted())
-                    .limit(taskPerGoal)
+                    .limit(taskPerGoal + (archetype == Archetype.EXPLORER ? 1 : 0))
                     .collect(Collectors.toList());
 
-            for (GoalBacklogItem item : pendingItems) {
-                Difficulty difficulty = mapDifficulty(archetype, gentleMode, rescueMode);
+            if (archetype == Archetype.EXPLORER && pendingItems.size() >= 2) {
+                Difficulty difficulty = mapDifficulty(user, archetype, gentleMode, rescueMode);
 
-                Task task = Task.builder()
+                Task surpriseTask = Task.builder()
                         .user(user)
                         .goal(goal)
-                        .backlogItem(item)
                         .source(TaskSource.GOAL_GENERATED)
-                        .title(item.getTitle())
+                        .title("Surprise Task")
                         .difficulty(difficulty)
-                        .estimatedMinutes(item.getEstimatedMinutes())
+                        .estimatedMinutes(pendingItems.get(0).getEstimatedMinutes())
                         .scheduledDate(date)
                         .status(TaskStatus.TODO)
+                        .isSurprise(true)
+                        .build();
+                taskRepository.save(surpriseTask);
+
+                SurpriseTaskOption option1 = SurpriseTaskOption.builder().
+                        task(surpriseTask)
+                        .backlogItem(pendingItems.get(0))
                         .build();
 
-                taskRepository.save(task);
-                totalMinutes += item.getEstimatedMinutes();
+                SurpriseTaskOption option2 = SurpriseTaskOption.builder()
+                        .task(surpriseTask)
+                        .backlogItem(pendingItems.get(1))
+                        .build();
+                surpriseTaskOptionRepository.save(option1);
+                surpriseTaskOptionRepository.save(option2);
+            } else {
+
+                for (GoalBacklogItem item : pendingItems) {
+                    Difficulty difficulty = mapDifficulty(user, archetype, gentleMode, rescueMode);
+
+                    Task task = Task.builder()
+                            .user(user)
+                            .goal(goal)
+                            .backlogItem(item)
+                            .source(TaskSource.GOAL_GENERATED)
+                            .title(item.getTitle())
+                            .difficulty(difficulty)
+                            .estimatedMinutes(item.getEstimatedMinutes())
+                            .scheduledDate(date)
+                            .status(TaskStatus.TODO)
+                            .build();
+
+                    taskRepository.save(task);
+                    totalMinutes += item.getEstimatedMinutes();
+                }
             }
 
         }
@@ -112,13 +143,16 @@ public class DailyPlanService {
         return gentleMode ? 2 : 3;
     }
 
-    private Difficulty mapDifficulty( Archetype archetype, boolean gentleMode, boolean rescueMode) {
+    private Difficulty mapDifficulty(User user, Archetype archetype, boolean gentleMode, boolean rescueMode) {
         if (rescueMode) return Difficulty.EASY;
-        return switch (archetype) {
+
+        Difficulty baseDifficulty = switch (archetype) {
             case ACHIEVER -> gentleMode ? Difficulty.MEDIUM : Difficulty.HARD;
             case PLANNER -> gentleMode ? Difficulty.EASY : Difficulty.MEDIUM;
-            case  EXPLORER ->  gentleMode ? Difficulty.EASY : Difficulty.MEDIUM;
+            case EXPLORER -> gentleMode ? Difficulty.EASY : Difficulty.MEDIUM;
         };
+
+        return userStatsService.adjusDifficulty(user, baseDifficulty);
     }
 
     private OverloadLevel calculateOverloadLevel(int totalMinutes) {
@@ -146,7 +180,8 @@ public class DailyPlanService {
                         task.getCompletedAt(),
                         task.getCreatedAt(),
                         task.getParentTask() != null ? task.getParentTask().getId() : null,
-                        task.getGoal() != null  ? task.getGoal().getId() : null
+                        task.getGoal() != null  ? task.getGoal().getId() : null,
+                        task.isSurprise()
                 )).collect(Collectors.toList());
 
         return new DailyPlanResponse(

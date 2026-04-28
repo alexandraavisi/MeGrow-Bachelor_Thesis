@@ -1,16 +1,14 @@
 package com.megrow.megrowbackend.service;
 
+import com.megrow.megrowbackend.dto.request.ChooseSurpriseTaskRequest;
 import com.megrow.megrowbackend.dto.request.CreateTaskRequest;
 import com.megrow.megrowbackend.dto.request.UpdateTaskStatusRequest;
+import com.megrow.megrowbackend.dto.response.SurpriseTaskOptionsResponse;
 import com.megrow.megrowbackend.dto.response.TaskResponse;
-import com.megrow.megrowbackend.entities.Task;
-import com.megrow.megrowbackend.entities.TaskTimeSession;
-import com.megrow.megrowbackend.entities.User;
+import com.megrow.megrowbackend.entities.*;
 import com.megrow.megrowbackend.enums.TaskSource;
 import com.megrow.megrowbackend.enums.TaskStatus;
-import com.megrow.megrowbackend.repository.TaskRepository;
-import com.megrow.megrowbackend.repository.TaskTimeSessionRepository;
-import com.megrow.megrowbackend.repository.UserRepository;
+import com.megrow.megrowbackend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,6 +28,8 @@ public class TaskService {
     private final TaskTimeSessionRepository  taskTimeSessionRepository;
     private final UserRepository userRepository;
     private final UserStatsService userStatsService;
+    private final SurpriseTaskOptionRepository surpriseTaskOptionRepository;
+    private final GoalBacklogItemRepository goalBacklogItemRepository;
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request) {
@@ -200,6 +200,61 @@ public class TaskService {
         return mapToResponse(task);
     }
 
+    public SurpriseTaskOptionsResponse getSurpriseOptions(UUID taskId) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        if (!task.isSurprise()) {
+            throw new RuntimeException("Task is not a surprise task");
+        }
+
+        List<SurpriseTaskOption> options = surpriseTaskOptionRepository.findByTaskId(taskId);
+        if (options.size() < 2) {
+            throw new RuntimeException("Surprise options not found");
+        }
+
+        GoalBacklogItem item1 = options.get(0).getBacklogItem();
+        GoalBacklogItem item2 = options.get(1).getBacklogItem();
+
+        return new SurpriseTaskOptionsResponse(
+                item1.getId(), item1.getTitle(), item1.getItemType(), item1.getEstimatedMinutes(),
+                item2.getId(), item2.getTitle(), item2.getItemType(), item2.getEstimatedMinutes()
+        );
+    }
+
+    @Transactional
+    public TaskResponse chooseSurpriseTask(UUID taskId, ChooseSurpriseTaskRequest request) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        if (!task.isSurprise()) {
+            throw new RuntimeException("Task is not a surprise task");
+        }
+
+        GoalBacklogItem chosenItem = goalBacklogItemRepository.findById(request.getBacklogItemId())
+                .orElseThrow(() -> new RuntimeException("Backlog item not found"));
+
+        task.setTitle(chosenItem.getTitle());
+        task.setBacklogItem(chosenItem);
+        task.setSurprise(false);
+        task.setEstimatedMinutes(chosenItem.getEstimatedMinutes());
+        taskRepository.save(task);
+
+        surpriseTaskOptionRepository.deleteByTaskId(taskId);
+
+        return mapToResponse(task);
+    }
+
     private TaskResponse mapToResponse(Task task) {
         return new TaskResponse(
                 task.getId(),
@@ -216,7 +271,8 @@ public class TaskService {
                 task.getCompletedAt(),
                 task.getCreatedAt(),
                 task.getParentTask() != null ? task.getParentTask().getId() : null,
-                task.getGoal() != null ? task.getGoal().getId() : null
+                task.getGoal() != null ? task.getGoal().getId() : null,
+                task.isSurprise()
         );
     }
 

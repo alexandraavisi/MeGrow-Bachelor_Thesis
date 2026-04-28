@@ -1,8 +1,11 @@
 package com.megrow.megrowbackend.controller;
 
+import com.megrow.megrowbackend.dto.response.UserProfileResponse;
 import com.megrow.megrowbackend.dto.response.UserStatsResponse;
 import com.megrow.megrowbackend.entities.User;
+import com.megrow.megrowbackend.entities.UserProfile;
 import com.megrow.megrowbackend.entities.UserStats;
+import com.megrow.megrowbackend.repository.UserProfileRepository;
 import com.megrow.megrowbackend.repository.UserRepository;
 import com.megrow.megrowbackend.repository.UserStatsRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ public class UserStatsController {
 
     private final UserStatsRepository  userStatsRepository;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
 
     @GetMapping("/stats")
     public ResponseEntity<UserStatsResponse> getStats() {
@@ -37,6 +41,30 @@ public class UserStatsController {
                 stats.getStreakDays(),
                 stats.getLastActivityDate(),
                 stats.getRescueModeSince() != null
+        ));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserProfileResponse> getProfile() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserProfile profile = userProfileRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        return ResponseEntity.ok(new UserProfileResponse(
+                user.getName(),
+                user.getEmail(),
+                profile.getCalculatedArchetype(),
+                profile.getFinalArchetype(),
+                profile.isArchetypeConfirmed(),
+                profile.isGentleMode(),
+                profile.getScoreO(),
+                profile.getScoreV(),
+                profile.getScoreM(),
+                profile.getScoreS()
         ));
     }
 }

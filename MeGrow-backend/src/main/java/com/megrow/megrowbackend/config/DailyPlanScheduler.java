@@ -1,7 +1,6 @@
 package com.megrow.megrowbackend.config;
 
 import com.megrow.megrowbackend.entities.User;
-import com.megrow.megrowbackend.repository.DailyPlanRepository;
 import com.megrow.megrowbackend.repository.UserRepository;
 import com.megrow.megrowbackend.service.DailyPlanService;
 import com.megrow.megrowbackend.service.UserStatsService;
@@ -25,10 +24,22 @@ public class DailyPlanScheduler {
 
         for (User user : users) {
             try {
-                userStatsService.checkAndActivateRescueMode(user);
                 dailyPlanService.generatePlan(user, LocalDate.now());
             } catch (Exception e) {
                 System.err.println("Error generating plan for user: " + user.getId());
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void decreaseTreeHealth() {
+        List<User> users = userRepository.findAll();
+
+        for (User user : users) {
+            try {
+                userStatsService.checkAndActivateRescueMode(user);
+            } catch (Exception e) {
+                System.err.println("Error processing health decay for user: " + user.getId());
             }
         }
     }

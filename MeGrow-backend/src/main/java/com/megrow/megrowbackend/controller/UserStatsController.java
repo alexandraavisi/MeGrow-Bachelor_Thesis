@@ -1,6 +1,7 @@
 package com.megrow.megrowbackend.controller;
 
 import com.megrow.megrowbackend.dto.request.ChangePasswordRequest;
+import com.megrow.megrowbackend.dto.request.PushTokenRequest;
 import com.megrow.megrowbackend.dto.response.UserProfileResponse;
 import com.megrow.megrowbackend.dto.response.UserStatsResponse;
 import com.megrow.megrowbackend.entities.User;
@@ -101,6 +102,20 @@ public class UserStatsController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setActive(false);
+        userRepository.save(user);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/push-token")
+    public ResponseEntity<Void> updatePushToken(
+            @Valid @RequestBody PushTokenRequest request) {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPushToken(request.getPushToken());
         userRepository.save(user);
 
         return ResponseEntity.ok().build();

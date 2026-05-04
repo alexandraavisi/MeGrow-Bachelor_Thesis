@@ -37,7 +37,13 @@ export default function LoginScreen() {
                 name: response.data.name,
                 email: response.data.email,
             }));
-            router.replace('/(tabs)');
+
+            const profileResponse = await api.get('/api/user/profile');
+            if (!profileResponse.data.archetypeConfirmed || !profileResponse.data.finalArchetype) {
+                router.replace('/(onboarding)/questions');
+            } else {
+                router.replace('/(tabs)');
+            }
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.message || 'Login failed');
         } finally {

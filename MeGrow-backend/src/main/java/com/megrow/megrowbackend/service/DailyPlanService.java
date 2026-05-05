@@ -179,6 +179,17 @@ public class DailyPlanService {
         return OverloadLevel.NONE;
     }
 
+    @Transactional
+    public DailyPlanResponse regeneratePlan() {
+        User user = getCurrentUser();
+        LocalDate today = LocalDate.now();
+
+        dailyPlanRepository.findByUserIdAndPlanDate(user.getId(), today)
+                .ifPresent(dailyPlanRepository::delete);
+
+        return generatePlan(user, today);
+    }
+
     private DailyPlanResponse mapToResponse(DailyPlan plan, User user) {
         List<TaskResponse> tasks = taskRepository
                 .findByUserIdAndScheduledDateAndParentTaskIsNull(user.getId(), plan.getPlanDate())

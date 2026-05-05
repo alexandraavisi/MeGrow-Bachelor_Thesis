@@ -5,6 +5,7 @@ import com.megrow.megrowbackend.service.DailyPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,5 +18,10 @@ public class DailyPlanController {
     @GetMapping("/today")
     public ResponseEntity<DailyPlanResponse> getTodayPlan(){
         return ResponseEntity.ok(dailyPlanService.getTodayPlan());
+    }
+
+    @PostMapping("/regenerate")
+    public ResponseEntity<DailyPlanResponse> regeneratePlan(){
+        return ResponseEntity.ok(dailyPlanService.regeneratePlan());
     }
 }

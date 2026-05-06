@@ -1,12 +1,13 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//const API_URL = 'http://192.168.1.130:8080'; //bucuresti
+const API_URL = 'http://192.168.1.130:8080'; //bucuresti
 //const API_URL = 'http://192.168.1.8:8080'; //acasa
 //const API_URL = 'http://192.168.1.9:8080';
 //const API_URL = 'http://10.10.10.146:8080'; //TUCANO
 //const API_URL = 'http://172.20.10.3:8080'
-const API_URL = 'http://192.168.55.233:8080'; //cristina
+//const API_URL = 'http://192.168.55.233:8080'; //cristina
+//const API_URL = 'http://10.33.96.118:8080';
 
 
 const api = axios.create({

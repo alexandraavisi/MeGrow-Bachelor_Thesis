@@ -6,6 +6,8 @@ import {
     ScrollView,
     ActivityIndicator,
     RefreshControl, 
+    Modal,
+    Alert,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -46,6 +48,9 @@ export default function HomeScreen() {
     const [userName, setUserName] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [surpriseModalVisible, setSurpriseModalVisible] = useState(false);
+    const [selectedSurpriseTask, setSelectedsurpriseTask] = useState<Task | null>(null);
+    const [surpriseOptions, setSurpriseOptions] = useState<any>(null);
 
     useEffect(() => {
         loadData();
@@ -120,6 +125,28 @@ export default function HomeScreen() {
         month: "long",
         day: "numeric",
     });
+
+    const openSurpriseModal = async (task: Task) => {
+        setSelectedsurpriseTask(task);
+        try {
+            const response = await api.get(`/api/tasks/${task.id}/surprise-options`);
+            setSurpriseOptions(response.data);
+            setSurpriseModalVisible(true);
+        } catch (error) {
+            Alert.alert("Error", "Failed to load options");
+        }
+    };
+
+    const chooseSurpriseOption = async (backlogItemId: string) => {
+        if (!selectedSurpriseTask) return;
+        try {
+            await api.post(`/api/tasks/${selectedSurpriseTask.id}/choose`, {backlogItemId});
+            setSurpriseModalVisible(false);
+            await loadData();
+        } catch (error: any) {
+            Alert.alert("Error", error.response?.data?.message || "Failed to choose");
+        }
+    };
 
     if (isLoading) {
         return(
@@ -210,7 +237,14 @@ export default function HomeScreen() {
                                 styles.taskCard,
                                 task.status === "DONE" && styles.taskDone,
                             ]}
-                            onPress={() => router.push(`/(tabs)/task/${task.id}` as any)}>
+                            onPress={() => {
+                                if (task.surprise) {
+                                    openSurpriseModal(task);
+                                } else {
+                                    router.push(`/(tabs)/task/${task.id}` as any)
+                                }
+                            }}>
+                            
                             <Text style={styles.taskStatus}>{getStatusIcon(task.status)}</Text>
                             <View style={styles.taskInfo}>
                                 <Text style={[
@@ -239,6 +273,51 @@ export default function HomeScreen() {
                 <Ionicons name="add" size={20} color="#fff" />
                 <Text style={styles.addButtonText}>Add Task</Text>
             </TouchableOpacity>
+
+            {/*surprise task*/}
+            <Modal
+                visible={surpriseModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setSurpriseModalVisible(false)} 
+            >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                    <Text style={styles.modalEmoji}>🎁</Text>
+                    <Text style={styles.modalTitle}>Surprise Task!</Text>
+                    <Text style={styles.modalSubtitle}>Choose your activity for today</Text>
+
+                    {surpriseOptions && (
+                        <>
+                            <TouchableOpacity
+                                style={styles.modalOptionCard}
+                                onPress={() => chooseSurpriseOption(surpriseOptions.option1Id)} >
+                                <Text style={styles.modalOptionTitle}>{surpriseOptions.option1Title}</Text>
+                                <Text style={styles.modalOptionTime}>⏱{ surpriseOptions.option1EstimatedMinutes} min</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.modalOrText}>or</Text>
+
+                            <TouchableOpacity
+                                style={styles.modalOptionCard}
+                                onPress={() => chooseSurpriseOption(surpriseOptions.option2Id)} >
+                                <Text style={styles.modalOptionTitle}>{surpriseOptions.option2Title}</Text>
+                                <Text style={styles.modalOptionTime}>⏱{ surpriseOptions.option2EstimatedMinutes} min</Text>
+                            </TouchableOpacity>
+                        </>
+                    )
+
+                    }
+                    <TouchableOpacity
+                        style={styles.modalCancelButton}
+                        onPress={() => setSurpriseModalVisible(false)}>
+                        <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
+
+            </View>
+
+            </Modal>
 
         </ScrollView>
     );
@@ -445,5 +524,65 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 16,
         fontWeight: "bold"
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "flex-end",
+    },
+    modalContainer: {
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        alignItems: "center",
+        paddingBottom: 40,
+    },
+    modalEmoji: {
+        fontSize: 48,
+        marginBottom: 8,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#333",
+        marginBottom: 4,
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: "#999",
+        marginBottom: 24,
+    },
+    modalOptionCard: {
+        width: "100%",
+        backgroundColor: "#f5f5f5",
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 8,
+        borderWidth: 1.5,
+        borderColor: "#2d6a4f",
+    },
+    modalOptionTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 4,
+    },
+    modalOptionTime: {
+        fontSize: 13,
+        color: "#999",
+    },
+    modalOrText: {
+        fontSize: 14,
+        color: "#999",
+        marginVertical: 8,
+    },
+    modalCancelButton: {
+        marginTop: 16,
+        padding: 12,
+    },
+    modalCancelText: {
+        fontSize: 16,
+        color: "#999",
     },
 });

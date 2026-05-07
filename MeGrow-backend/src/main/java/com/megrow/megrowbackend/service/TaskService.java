@@ -75,6 +75,7 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public TaskResponse getTaskById(UUID id) {
         User user = getCurrentUser();
         Task task = taskRepository.findById(id)
@@ -273,7 +274,8 @@ public class TaskService {
                 task.getCreatedAt(),
                 task.getParentTask() != null ? task.getParentTask().getId() : null,
                 task.getGoal() != null ? task.getGoal().getId() : null,
-                task.isSurprise()
+                task.isSurprise(),
+                task.getBacklogItem() != null ? task.getBacklogItem().getDetails() : null
         );
     }
 

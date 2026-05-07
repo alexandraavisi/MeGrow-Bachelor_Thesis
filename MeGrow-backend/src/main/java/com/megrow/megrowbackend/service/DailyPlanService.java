@@ -57,6 +57,11 @@ public class DailyPlanService {
         List<Goal> activeGoals = goalRepository.findByUserIdAndStatus(
                 user.getId(), GoalStatus.ACTIVE);
 
+        System.out.println("Active goals: " + activeGoals.size());
+        System.out.println("Archetype: " + archetype);
+        System.out.println("Gentle mode: " + gentleMode);
+        System.out.println("Rescue mode: " + rescueMode);
+
         int totalMinutes = manualMinutes;
 
         int taskPerGoal = getTasksPerGoal(gentleMode, rescueMode, OverloadLevel.NONE);
@@ -210,7 +215,8 @@ public class DailyPlanService {
                         task.getCreatedAt(),
                         task.getParentTask() != null ? task.getParentTask().getId() : null,
                         task.getGoal() != null  ? task.getGoal().getId() : null,
-                        task.isSurprise()
+                        task.isSurprise(),
+                        task.getBacklogItem() != null ? task.getBacklogItem().getDetails() : null
                 )).collect(Collectors.toList());
 
         return new DailyPlanResponse(

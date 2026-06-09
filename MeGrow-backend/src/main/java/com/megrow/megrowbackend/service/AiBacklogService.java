@@ -26,7 +26,11 @@ public class AiBacklogService {
     private final RestClient restClient = RestClient.create();
 
     public List<GoalBacklogItem> generateBacklog(Goal goal, UserProfile profile) {
-        String prompt = buildPrompt(goal, profile);
+        return generatePhase(goal, profile, 1);
+    }
+
+    public List<GoalBacklogItem> generatePhase(Goal goal, UserProfile profile, int phase) {
+        String prompt = buildPrompt(goal, profile, phase);
 
         Map<String, Object> requestBody = Map.of(
                 "model", model,
@@ -53,11 +57,22 @@ public class AiBacklogService {
         return parseBacklog(content, goal);
     }
 
-    private String buildPrompt(Goal goal, UserProfile profile) {
+    private String buildPrompt(Goal goal, UserProfile profile, int phase) {
         String archetypeDescription = getArchetypeDescription(profile.getFinalArchetype());
         String gentleDescriprion = profile.isGentleMode()
                 ? "GENTLE MODE ON: User is prone to procrastination and abandonment. Keep tasks short (max 15 min), simple and achievable. Avoid overwhelming tasks."
                 : "GENTLE MODE OFF: User is resilient and motivated. Can handle longer and more complex tasks.";
+
+        int totalWeeks = goal.getDurationWeeks();
+        int weeksPerPhase = Math.max(1, totalWeeks / 3);
+        int itemsPerPhase = weeksPerPhase * 3 * 5;
+
+        String phaseDescription = switch (phase) {
+            case 1 -> "PHASE 1 - Foundation: Start with basics and fundamentals. Tasks should be EASY to MEDIUM difficulty. Build confidence and habits.";
+            case 2 -> "PHASE 2 - Development: User has completed the basics. Increase complexity and depth. Tasks should be MEDIUM difficulty.";
+            case 3 -> "PHASE 3 - Mastery: User is experienced now. Focus on advanced topics and real-world application. Tasks should be MEDIUM to HARD difficulty.";
+            default -> "PHASE 1 - Foundation";
+        };
 
         return String.format("""
                 You are a personal development coach creating a personalized learning plan.
@@ -70,15 +85,20 @@ public class AiBacklogService {
                 - Category: %s
                 - Title: %s
                 - Level: %s
-                - Duration: %d weeks
+                - Total Duration: %d weeks
+                - Current Phase: %d of 3
+                - Phase Duration %d weeks
                 - Motivation: %s
                 
-                Generate a structured backlog of 20-30 items divided into 3 phases.
+                Phase CONTEXT:
+                %s
+                
+                Generate exactly %d backlog items for this phase.
                 
                 Return a JSON array with this exact structure:
                 [
                     {
-                        "phase": 1,
+                        "phase": %d,
                         "orderIndex": 1,
                         "itemType": "VOCAB",
                         "title": "Item title",
@@ -103,9 +123,8 @@ public class AiBacklogService {
                 
                 IMPORTANT RULES:
                 - For WORKOUT tasks: use sets and reps, NOT duration per exercise
-                - estimatedMinutes should reflect realistic total workout time including rest
-                - A typical 3 sets x 20 reps circuit = 15-20 minutes total
-                - Always ensure estimatedMinutes is realistic and consistent with the workout volume
+                - estimatedMinutes should reflect realistic total time 
+                - Always ensure estimatedMinutes is realistic and consistent
                 
                                 
                 ARCHETYPE RULES:
@@ -119,8 +138,13 @@ public class AiBacklogService {
                 goal.getCategory(),
                 goal.getTitle(),
                 goal.getLevel() != null ? goal.getLevel() : "BEGINNER",
-                goal.getDurationWeeks(),
+                totalWeeks,
+                phase,
+                weeksPerPhase,
                 goal.getMotivation() != null ? goal.getMotivation() : "General improvement",
+                phaseDescription,
+                itemsPerPhase,
+                phase,
                 getArchetypeRules(profile.getFinalArchetype(), profile.isGentleMode())
                 );
     }

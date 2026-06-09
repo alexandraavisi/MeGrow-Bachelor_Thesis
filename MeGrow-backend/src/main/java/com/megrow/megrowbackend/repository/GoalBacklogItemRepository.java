@@ -13,4 +13,9 @@ public interface GoalBacklogItemRepository extends JpaRepository<GoalBacklogItem
 
     @Query("SELECT g FROM GoalBacklogItem g WHERE g.goal.id = :goalId AND g.isCompleted = false  ORDER BY g.orderIndex ASC ")
     Optional<GoalBacklogItem> findNextPending(UUID goalId);
+
+    long countByGoalId(UUID goalId);
+    long countByGoalIdAndIsCompletedTrue(UUID goalId);
+    long countByGoalIdAndPhaseAndIsCompletedFalse(UUID goalId, short phase);
+    long countByGoalIdAndPhase(UUID goalId, short phase);
 }

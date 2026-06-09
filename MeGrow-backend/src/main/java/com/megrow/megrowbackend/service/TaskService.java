@@ -6,6 +6,7 @@ import com.megrow.megrowbackend.dto.request.UpdateTaskStatusRequest;
 import com.megrow.megrowbackend.dto.response.SurpriseTaskOptionsResponse;
 import com.megrow.megrowbackend.dto.response.TaskResponse;
 import com.megrow.megrowbackend.entities.*;
+import com.megrow.megrowbackend.enums.GoalStatus;
 import com.megrow.megrowbackend.enums.TaskSource;
 import com.megrow.megrowbackend.enums.TaskStatus;
 import com.megrow.megrowbackend.repository.*;
@@ -30,6 +31,9 @@ public class TaskService {
     private final UserStatsService userStatsService;
     private final SurpriseTaskOptionRepository surpriseTaskOptionRepository;
     private final GoalBacklogItemRepository goalBacklogItemRepository;
+    private final GoalRepository goalRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final AiBacklogService aiBacklogService;
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request) {
@@ -125,11 +129,45 @@ public class TaskService {
 
             userStatsService.awardXPForTasks(user, task);
 
+            if (task.getBacklogItem() != null) {
+                GoalBacklogItem backlogItem = task.getBacklogItem();
+                backlogItem.setCompleted(true);
+                backlogItem.setCompletedAt(OffsetDateTime.now());
+                goalBacklogItemRepository.save(backlogItem);
+
+                Goal goal = backlogItem.getGoal();
+                short currentPhase = backlogItem.getPhase();
+
+                long totalItems = goalBacklogItemRepository.countByGoalId(goal.getId());
+                long completedItems = goalBacklogItemRepository.countByGoalIdAndIsCompletedTrue(goal.getId());
+
+                if (totalItems > 0 && totalItems == completedItems) {
+                    goal.setStatus(GoalStatus.COMPLETED);
+                    goalRepository.save(goal);
+                } else {
+                    long remainingInPhase = goalBacklogItemRepository
+                            .countByGoalIdAndPhaseAndIsCompletedFalse(goal.getId(), currentPhase);
+
+                    if (remainingInPhase <= 3 && currentPhase < 3) {
+                        long nextPhaseItems = goalBacklogItemRepository
+                                .countByGoalIdAndPhase(goal.getId(), (short)(currentPhase + 1));
+
+                        if (nextPhaseItems == 0) {
+                            UserProfile profile = userProfileRepository.findById(goal.getUser().getId())
+                                    .orElseThrow(() -> new RuntimeException("Profile not found"));
+                            List<GoalBacklogItem> newItems = aiBacklogService
+                                    .generatePhase(goal, profile, currentPhase + 1);
+                            newItems.forEach(goalBacklogItemRepository::save);
+                        }
+                    }
+                }
+            }
+
             if (task.getParentTask() != null) {
                 Task parentTask = task.getParentTask();
                 List<Task> subtasks = taskRepository.findByParentTaskId(parentTask.getId());
                 boolean allDone = subtasks.stream()
-                        .allMatch(subtask -> subtask.getId() .equals(id)||  subtask.getStatus() == TaskStatus.DONE);
+                        .allMatch(subtask -> subtask.getId().equals(id) || subtask.getStatus() == TaskStatus.DONE);
 
                 if (allDone) {
                     parentTask.setStatus(TaskStatus.DONE);

@@ -2,6 +2,7 @@ package com.megrow.megrowbackend.controller;
 
 import com.megrow.megrowbackend.dto.request.ChangePasswordRequest;
 import com.megrow.megrowbackend.dto.request.PushTokenRequest;
+import com.megrow.megrowbackend.dto.response.UserAnalyticsResponse;
 import com.megrow.megrowbackend.dto.response.UserProfileResponse;
 import com.megrow.megrowbackend.dto.response.UserStatsResponse;
 import com.megrow.megrowbackend.entities.User;
@@ -10,6 +11,7 @@ import com.megrow.megrowbackend.entities.UserStats;
 import com.megrow.megrowbackend.repository.UserProfileRepository;
 import com.megrow.megrowbackend.repository.UserRepository;
 import com.megrow.megrowbackend.repository.UserStatsRepository;
+import com.megrow.megrowbackend.service.UserAnalyticsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ public class UserStatsController {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserAnalyticsService userAnalyticsService;
 
     @GetMapping("/stats")
     public ResponseEntity<UserStatsResponse> getStats() {
@@ -119,5 +122,10 @@ public class UserStatsController {
         userRepository.save(user);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<UserAnalyticsResponse> getAnalytics() {
+        return ResponseEntity.ok(userAnalyticsService.getAnalytics());
     }
 }

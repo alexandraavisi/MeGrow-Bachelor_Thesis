@@ -157,6 +157,15 @@ public class TaskService {
                                     .orElseThrow(() -> new RuntimeException("Profile not found"));
                             List<GoalBacklogItem> newItems = aiBacklogService
                                     .generatePhase(goal, profile, currentPhase + 1);
+
+                            short maxOrderIndex = goalBacklogItemRepository
+                                    .findMaxOrderIndexByGoalId(goal.getId())
+                                    .orElse((short) 0);
+
+                            for (GoalBacklogItem item : newItems) {
+                                item.setOrderIndex((short) (item.getOrderIndex() + maxOrderIndex));
+                            }
+
                             newItems.forEach(goalBacklogItemRepository::save);
                         }
                     }

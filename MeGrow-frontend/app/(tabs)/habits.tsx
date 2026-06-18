@@ -11,6 +11,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from "../../services/api";
+import { useStepCounter } from "../../hooks/useStepCounter"
 
 interface Habit {
     id: string;
@@ -25,6 +26,7 @@ interface Habit {
 export default function HabitsScreen() {
     const [habits, setHabits] = useState<Habit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
 
     useFocusEffect(
         useCallback(() => {
@@ -42,6 +44,8 @@ export default function HabitsScreen() {
             setIsLoading(false);
         }
     };
+
+    const { steps, isAvailable, target } = useStepCounter(loadHabits);
 
     const toggleHabit = async (habit: Habit) => {
         if (habit.completedToday) return;
@@ -88,10 +92,31 @@ export default function HabitsScreen() {
             
             </View>
 
+            {isAvailable && (
+                <View style={styles.stepsCard}>
+                    <View style={styles.stepsHeader}>
+                        <Text style={styles.stepsTitle}>👣 Daily Steps</Text>
+                        <Text style={styles.stepsCount}>{steps} / {target}</Text>
+                    </View>
+                    <View style={styles.progressBar}>
+                        <View style={[
+                            styles.progressFill,
+                            styles.stepsFill,
+                            { width: `${Math.min((steps / target) * 100, 100)}%` }
+                        ]} />
+                    </View>
+                    <Text style={styles.stepsSubtext}>
+                        {steps >= target
+                            ? "✅ Goal reached! Walking habit completed!"
+                            : `${target - steps} more steps to complete your habit`}
+                    </Text>
+                </View>
+            )}
+
             {/*Habits List*/}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Daily Habits</Text>
-                {habits.filter(h => !h.custom).map(habit => (
+                {habits.filter(h => !h.custom  && h.code !== "WALK_STEPS").map(habit => (
                     <TouchableOpacity
                     key={habit.id}
                     style={[
@@ -292,5 +317,40 @@ const styles = StyleSheet.create({
         color: "#2d6a4f",
         fontSize: 16,
         fontWeight: "bold"
+    },
+    stepsCard: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    stepsHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    stepsTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#333",
+    },
+    stepsCount: {
+        fontSize: 14,
+        fontWeight: "bold",
+        color: "#2d6a4f",
+    },
+    stepsSubtext: {
+        fontSize: 12,
+        color: "#999",
+        marginTop: 6,
+    },
+    stepsFill: {
+        backgroundColor: "#2d6a4f",
     },
 });

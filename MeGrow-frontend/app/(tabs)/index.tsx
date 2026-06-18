@@ -8,12 +8,15 @@ import {
     RefreshControl, 
     Modal,
     Alert,
+    TextInput,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState, useEffect, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../services/api";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import TreeVisualization from "../../components/TreeVisualization"
 
 interface Task {
     id: string;
@@ -39,6 +42,7 @@ interface UserStats {
     level: number;
     treeHealth: number;
     streakDays: number;
+    rescueMode: boolean;
 }
 
 export default function HomeScreen() {
@@ -51,6 +55,15 @@ export default function HomeScreen() {
     const [surpriseModalVisible, setSurpriseModalVisible] = useState(false);
     const [selectedSurpriseTask, setSelectedsurpriseTask] = useState<Task | null>(null);
     const [surpriseOptions, setSurpriseOptions] = useState<any>(null);
+    const [addTaskModalVisible, setAddTaskModalVisible] = useState(false);
+    const [taskTitle, setTaskTitle] = useState("");
+    const [taskDescription, setTaskDescription] = useState("");
+    const [taskDifficulty, setTaskDifficulty] = useState("MEDIUM");
+    const [taskMinutes, setTaskMinutes] = useState("30");
+    const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [taskDate, setTaskDate] = useState(new Date().toISOString().split("T")[0]);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     useEffect(() => {
         loadData();
@@ -86,13 +99,6 @@ export default function HomeScreen() {
         loadData();
     }, []);
 
-    const getTreeEmoji = (level: number, health: number) => {
-        if (health < 20) return "🥀";
-        if (level >= 4) return "🌲";
-        if (level >= 3) return "🌳";
-        if (level >= 2) return "🌿";
-        return "🌱";
-    }
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -148,6 +154,33 @@ export default function HomeScreen() {
         }
     };
 
+    const handleCreateTask = async () => {
+        if (!taskTitle) {
+            Alert.alert("Error", "Please enter a title");
+            return;
+        }
+
+        setIsCreatingTask(true);
+        try {
+            await api.post("/api/tasks", {
+                title: taskTitle,
+                description: taskDescription || null,
+                difficulty: taskDifficulty,
+                estimatedMinutes: parseInt(taskMinutes),
+                scheduledDate: taskDate,
+            });
+            setAddTaskModalVisible(false);
+            setTaskTitle("");
+            setTaskDescription("");
+            setTaskMinutes("30");
+            await loadData();
+        } catch (error: any) {
+            Alert.alert("Error", error.response?.data?.message || "Failed to create task");
+        } finally {
+            setIsCreatingTask(false);
+        }
+    };
+
     if (isLoading) {
         return(
             <View style={styles.loadingContainer}>
@@ -180,9 +213,15 @@ export default function HomeScreen() {
                 <TouchableOpacity
                     style={styles.treeCard}
                     onPress={() => router.push("/(tabs)/tree")}>
-                    <Text style={styles.treeEmoji}>
-                        {getTreeEmoji(stats.level, stats.treeHealth)}
-                    </Text>
+                    <View >
+                        <TreeVisualization
+                            level={stats.level}
+                            health={stats.treeHealth}
+                            rescueMode={stats.rescueMode}
+                            flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - 1000) / 50)) : 0}
+                            size={100}
+                        />
+                    </View>
                     <View style={styles.treeInfo}>
                         <Text style={styles.treeLevel}>Level {stats.level}</Text>
                         <Text style={styles.treeXp}>{stats.xpTotal} XP</Text>
@@ -269,7 +308,7 @@ export default function HomeScreen() {
             {/* Add Manual Task Button */}
             <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => router.push("/(tabs)/add-task" as any)}>
+                onPress={() => setAddTaskModalVisible(true)}>
                 <Ionicons name="add" size={20} color="#fff" />
                 <Text style={styles.addButtonText}>Add Task</Text>
             </TouchableOpacity>
@@ -319,6 +358,112 @@ export default function HomeScreen() {
 
             </Modal>
 
+            <Modal
+                visible={addTaskModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setAddTaskModalVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.addTaskModalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>New Task</Text>
+                            <TouchableOpacity onPress={() => setAddTaskModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={styles.fieldLabel}>Title</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="e.g. Buy groceries"
+                                value={taskTitle}
+                                onChangeText={setTaskTitle}
+                            />
+
+                            <Text style={styles.fieldLabel}>Date</Text>
+                            <TouchableOpacity
+                                style={styles.dateInputButton}
+                                onPress={() => setShowDatePicker(true)}>
+                                <Ionicons name="calendar-outline" size={18} color="#2d6a4f" />
+                                <Text style={styles.dateInputText}>
+                                    {selectedDate.toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    })}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={selectedDate}
+                                    mode="date"
+                                    display="default"
+                                    minimumDate={new Date()}
+                                    onChange={(event, date) => {
+                                        setShowDatePicker(false);
+                                        if (date) {
+                                            setSelectedDate(date);
+                                            setTaskDate(date.toISOString().split("T")[0]);
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            <Text style={styles.fieldLabel}>Description (optional)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Add more details..."
+                                value={taskDescription}
+                                onChangeText={setTaskDescription}
+                                multiline
+                            />
+
+                            <Text style={styles.fieldLabel}>Estimated Time (minutes)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="e.g. 30"
+                                value={taskMinutes}
+                                onChangeText={setTaskMinutes}
+                                keyboardType="numeric"
+                            />
+
+                            <Text style={styles.fieldLabel}>Difficulty</Text>
+                            <View style={styles.difficultyContainer}>
+                                {["EASY", "MEDIUM", "HARD"].map(d => (
+                                    <TouchableOpacity
+                                        key={d}
+                                        style={[
+                                            styles.difficultyButton,
+                                            taskDifficulty === d && styles.difficultyButtonActive,
+                                        ]}
+                                        onPress={() => setTaskDifficulty(d)}>
+                                        <Text style={[
+                                            styles.difficultyText,
+                                            taskDifficulty === d && styles.difficultyTextActive,
+                                        ]}>
+                                            {d}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.createTaskButton}
+                                onPress={handleCreateTask}
+                                disabled={isCreatingTask}>
+                                {isCreatingTask
+                                    ? <ActivityIndicator color="#fff" />
+                                    : <Text style={styles.createTaskButtonText}>Create Task</Text>
+                                }
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
         </ScrollView>
     );
 }
@@ -364,9 +509,6 @@ const styles = StyleSheet.create({
         shadowRadius:8,
         elevation: 3,
         gap: 12,
-    },
-    treeEmoji: {
-        fontSize: 48,
     },
     treeInfo: {
         flex: 1,
@@ -585,4 +727,133 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#999",
     },
+    addTaskModalContainer: {
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        maxHeight: "85%",
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 8,
+        marginTop: 12,
+    },
+    input: {
+        backgroundColor: "#f5f5f5",
+        borderRadius: 12,
+        padding: 14,
+        fontSize: 15,
+        color: "#333",
+    },
+    minutesContainer: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    minutesButton: {
+        flex: 1,
+        backgroundColor: "#f5f5f5",
+        borderRadius: 10,
+        paddingVertical: 10,
+        alignItems: "center",
+        borderWidth: 1.5,
+        borderColor: "transparent",
+    },
+    minutesButtonActive: {
+        borderColor: "#2d6a4f",
+        backgroundColor: "#e8f5e9",
+    },
+    minutesText: {
+        fontSize: 13,
+        color: "#666",
+        fontWeight: "600",
+    },
+    minutesTextActive: {
+        color: "#2d6a4f",
+    },
+    difficultyContainer: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    difficultyButton: {
+        flex: 1,
+        backgroundColor: "#f5f5f5",
+        borderRadius: 10,
+        paddingVertical: 10,
+        alignItems: "center",
+        borderWidth: 1.5,
+        borderColor: "transparent",
+    },
+    difficultyButtonActive: {
+        borderColor: "#2d6a4f",
+        backgroundColor: "#e8f5e9",
+    },
+    difficultyText: {
+        fontSize: 12,
+        color: "#666",
+        fontWeight: "600",
+    },
+    difficultyTextActive: {
+        color: "#2d6a4f",
+    },
+    createTaskButton: {
+        backgroundColor: "#2d6a4f",
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: "center",
+        marginTop: 20,
+        marginBottom: 16,
+    },
+    createTaskButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    dateContainer: {
+        flexDirection: "row",
+        gap: 6,
+        flexWrap: "wrap",
+    },
+    dateButton: {
+        backgroundColor: "#f5f5f5",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderWidth: 1.5,
+        borderColor: "transparent",
+    },
+    dateButtonActive: {
+        borderColor: "#2d6a4f",
+        backgroundColor: "#e8f5e9",
+    },
+    dateText: {
+        fontSize: 12,
+        color: "#666",
+        fontWeight: "600",
+    },
+    dateTextActive: {
+        color: "#2d6a4f",
+    },
+    dateInputButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#f5f5f5",
+        borderRadius: 12,
+        padding: 14,
+    },
+    dateInputText: {
+        fontSize: 15,
+        color: "#333",
+        fontWeight: "500",
+    },
+
 });

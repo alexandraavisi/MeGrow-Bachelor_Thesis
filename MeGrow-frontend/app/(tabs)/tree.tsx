@@ -8,6 +8,7 @@ import {
      ActivityIndicator
 } from 'react-native';
 import api from "../../services/api";
+import TreeVisualization from "../../components/TreeVisualization";
 
 interface UserStats {
     xpTotal: number;
@@ -88,20 +89,22 @@ export default function TreeScreen() {
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <Text style={styles.title}>My Tree</Text>
 
-            {/* Tree visual*/ }
+            {/* Tree visual*/ } 
             <View style={styles.treeContainer}>
-                <Text style={styles.treeEmoji}>
-                    {getTreeEmoji(stats.level, stats.treeHealth)}
-                </Text>
-                {stats.rescueMode && (
-                    <View style={styles.rescueBadge}>
-                        <Text style={styles.rescueText}>🆘 Rescue Mode</Text>
-                    </View>
-                )}
-                <Text style={styles.treeMessage}>
-                    {getTreeMessage(stats.level, stats.treeHealth)}
-                </Text>
-            </View>
+            <TreeVisualization level={stats.level} 
+                health={stats.treeHealth}
+                rescueMode={stats.rescueMode}
+                flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - 1000) / 50)) : 0}
+            />
+            {stats.rescueMode && (
+                <View style={styles.rescueBadge}>
+                    <Text style={styles.rescueText}>🆘 Rescue Mode</Text>
+                </View>
+            )}
+            <Text style={styles.treeMessage}>
+                {getTreeMessage(stats.level, stats.treeHealth)}
+            </Text>
+        </View>
 
             {/*Level and XP*/}
             <View style={styles.card}>
@@ -198,7 +201,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "#fff",
         borderRadius: 20,
-        padding: 32,
+        padding: 60,
         marginBottom: 16,
         shadowColor: "#000",
         shadowOffset: {width: 0, height: 2},

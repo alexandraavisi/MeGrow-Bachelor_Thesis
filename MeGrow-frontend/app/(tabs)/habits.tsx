@@ -7,6 +7,8 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    Modal,
+    TextInput,
 } from "react-native";
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +28,10 @@ interface Habit {
 export default function HabitsScreen() {
     const [habits, setHabits] = useState<Habit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [addHabitModalVisible, setAddHabitModalVisible] = useState(false);
+    const [habitTitle, setHabitTitle] = useState("");
+    const [habitDescription, setHabitDescription] = useState("");
+    const [isCreatingHabit, setIsCreatingHabit] = useState(false);
 
 
     useFocusEffect(
@@ -72,6 +78,29 @@ export default function HabitsScreen() {
             </View>
         );
     }
+
+    const handleCreateHabit = async () => {
+        if (!habitTitle.trim()) {
+            Alert.alert("Error", "Please enter a title");
+            return;
+        }
+
+        setIsCreatingHabit(true);
+        try {
+            await api.post("/api/habits/custom", {
+                title: habitTitle,
+                description: habitDescription || null,
+            });
+            setAddHabitModalVisible(false);
+            setHabitTitle("");
+            setHabitDescription("");
+            await loadHabits();
+        } catch (error: any) {
+            Alert.alert("Error", error.response?.data?.message || "Failed to create habit");
+        } finally {
+            setIsCreatingHabit(false);
+        }
+    };
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -190,10 +219,54 @@ export default function HabitsScreen() {
             {/* Add custom habit*/}
             <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => Alert.alert("Coming soon", "Add custom habit feature coming soon!")} >
+                onPress={() => setAddHabitModalVisible(true)} >
                 <Ionicons name="add" size={20} color="#2d6a4f" />
                 <Text style={styles.addButtonText}>Add Custom Habit</Text>
             </TouchableOpacity>
+
+            <Modal
+                visible={addHabitModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setAddHabitModalVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.addHabitModalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>New Custom Habit</Text>
+                            <TouchableOpacity onPress={() => setAddHabitModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.fieldLabel}>Title</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="e.g. Practice guitar"
+                            value={habitTitle}
+                            onChangeText={setHabitTitle}
+                        />
+
+                        <Text style={styles.fieldLabel}>Description (optional)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Add more details..."
+                            value={habitDescription}
+                            onChangeText={setHabitDescription}
+                            multiline
+                        />
+
+                        <TouchableOpacity
+                            style={styles.createHabitButton}
+                            onPress={handleCreateHabit}
+                            disabled={isCreatingHabit}>
+                            {isCreatingHabit
+                                ? <ActivityIndicator color="#fff" />
+                                : <Text style={styles.createHabitButtonText}>Create Habit</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
         </ScrollView>
     )
@@ -352,5 +425,54 @@ const styles = StyleSheet.create({
     },
     stepsFill: {
         backgroundColor: "#2d6a4f",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "flex-end",
+    },
+    addHabitModalContainer: {
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingBottom: 40,
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "#333",
+    },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 8,
+        marginTop: 12,
+    },
+    input: {
+        backgroundColor: "#f5f5f5",
+        borderRadius: 12,
+        padding: 14,
+        fontSize: 15,
+        color: "#333",
+    },
+    createHabitButton: {
+        backgroundColor: "#2d6a4f",
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: "center",
+        marginTop: 20,
+    },
+    createHabitButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     },
 });

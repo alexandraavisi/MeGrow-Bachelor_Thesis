@@ -9,6 +9,8 @@ import {
     Modal,
     Alert,
     TextInput,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -363,105 +365,109 @@ export default function HomeScreen() {
                 transparent
                 animationType="slide"
                 onRequestClose={() => setAddTaskModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.addTaskModalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>New Task</Text>
-                            <TouchableOpacity onPress={() => setAddTaskModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.fieldLabel}>Title</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="e.g. Buy groceries"
-                                value={taskTitle}
-                                onChangeText={setTaskTitle}
-                            />
-
-                            <Text style={styles.fieldLabel}>Date</Text>
-                            <TouchableOpacity
-                                style={styles.dateInputButton}
-                                onPress={() => setShowDatePicker(true)}>
-                                <Ionicons name="calendar-outline" size={18} color="#2d6a4f" />
-                                <Text style={styles.dateInputText}>
-                                    {selectedDate.toLocaleDateString("en-US", {
-                                        weekday: "short",
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                    })}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={selectedDate}
-                                    mode="date"
-                                    display="default"
-                                    minimumDate={new Date()}
-                                    onChange={(event, date) => {
-                                        setShowDatePicker(false);
-                                        if (date) {
-                                            setSelectedDate(date);
-                                            setTaskDate(date.toISOString().split("T")[0]);
-                                        }
-                                    }}
-                                />
-                            )}
-
-                            <Text style={styles.fieldLabel}>Description (optional)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Add more details..."
-                                value={taskDescription}
-                                onChangeText={setTaskDescription}
-                                multiline
-                            />
-
-                            <Text style={styles.fieldLabel}>Estimated Time (minutes)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="e.g. 30"
-                                value={taskMinutes}
-                                onChangeText={setTaskMinutes}
-                                keyboardType="numeric"
-                            />
-
-                            <Text style={styles.fieldLabel}>Difficulty</Text>
-                            <View style={styles.difficultyContainer}>
-                                {["EASY", "MEDIUM", "HARD"].map(d => (
-                                    <TouchableOpacity
-                                        key={d}
-                                        style={[
-                                            styles.difficultyButton,
-                                            taskDifficulty === d && styles.difficultyButtonActive,
-                                        ]}
-                                        onPress={() => setTaskDifficulty(d)}>
-                                        <Text style={[
-                                            styles.difficultyText,
-                                            taskDifficulty === d && styles.difficultyTextActive,
-                                        ]}>
-                                            {d}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1, justifyContent: "flex-end" }}>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.addTaskModalContainer}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>New Task</Text>
+                                <TouchableOpacity onPress={() => setAddTaskModalVisible(false)}>
+                                    <Ionicons name="close" size={24} color="#333" />
+                                </TouchableOpacity>
                             </View>
 
-                            <TouchableOpacity
-                                style={styles.createTaskButton}
-                                onPress={handleCreateTask}
-                                disabled={isCreatingTask}>
-                                {isCreatingTask
-                                    ? <ActivityIndicator color="#fff" />
-                                    : <Text style={styles.createTaskButtonText}>Create Task</Text>
-                                }
-                            </TouchableOpacity>
-                        </ScrollView>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                <Text style={styles.fieldLabel}>Title</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. Buy groceries"
+                                    value={taskTitle}
+                                    onChangeText={setTaskTitle}
+                                />
+
+                                <Text style={styles.fieldLabel}>Date</Text>
+                                <TouchableOpacity
+                                    style={styles.dateInputButton}
+                                    onPress={() => setShowDatePicker(true)}>
+                                    <Ionicons name="calendar-outline" size={18} color="#2d6a4f" />
+                                    <Text style={styles.dateInputText}>
+                                        {selectedDate.toLocaleDateString("en-US", {
+                                            weekday: "short",
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        })}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={selectedDate}
+                                        mode="date"
+                                        display="default"
+                                        minimumDate={new Date()}
+                                        onChange={(event, date) => {
+                                            setShowDatePicker(false);
+                                            if (date) {
+                                                setSelectedDate(date);
+                                                setTaskDate(date.toISOString().split("T")[0]);
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                <Text style={styles.fieldLabel}>Description (optional)</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Add more details..."
+                                    value={taskDescription}
+                                    onChangeText={setTaskDescription}
+                                    multiline
+                                />
+
+                                <Text style={styles.fieldLabel}>Estimated Time (minutes)</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. 30"
+                                    value={taskMinutes}
+                                    onChangeText={setTaskMinutes}
+                                    keyboardType="numeric"
+                                />
+
+                                <Text style={styles.fieldLabel}>Difficulty</Text>
+                                <View style={styles.difficultyContainer}>
+                                    {["EASY", "MEDIUM", "HARD"].map(d => (
+                                        <TouchableOpacity
+                                            key={d}
+                                            style={[
+                                                styles.difficultyButton,
+                                                taskDifficulty === d && styles.difficultyButtonActive,
+                                            ]}
+                                            onPress={() => setTaskDifficulty(d)}>
+                                            <Text style={[
+                                                styles.difficultyText,
+                                                taskDifficulty === d && styles.difficultyTextActive,
+                                            ]}>
+                                                {d}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.createTaskButton}
+                                    onPress={handleCreateTask}
+                                    disabled={isCreatingTask}>
+                                    {isCreatingTask
+                                        ? <ActivityIndicator color="#fff" />
+                                        : <Text style={styles.createTaskButtonText}>Create Task</Text>
+                                    }
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
         </ScrollView>

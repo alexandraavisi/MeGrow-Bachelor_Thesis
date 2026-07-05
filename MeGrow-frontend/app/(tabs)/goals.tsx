@@ -97,7 +97,7 @@ export default function GoalsScreen() {
 
             if (category === "FITNESS") {
                 body.fitnessType = fitnessType;
-                body.isPhisicallyActive = isPhysicallyActive;
+                body.isPhysicallyActive = isPhysicallyActive;
             } else {
                 body.level = level;
             }
@@ -302,7 +302,7 @@ export default function GoalsScreen() {
                             {/* Duration */}
                             <Text style={styles.fieldLabel}>Duration (weeks)</Text>
                             <View style={styles.durationContainer}>
-                                {["4", "8", "12", "16"].map(w => (
+                                {["4", "8", "12"].map(w => (
                                     <TouchableOpacity
                                         key={w}
                                         style={[

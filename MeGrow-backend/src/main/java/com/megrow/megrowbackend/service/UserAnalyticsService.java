@@ -12,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -61,16 +58,17 @@ public class UserAnalyticsService {
     }
 
     private String calculateMostProductiveDay(List<Task> completedTasks) {
-        Map<DayOfWeek, Long> countByDay = completedTasks.stream()
+        return completedTasks.stream()
                 .filter(t -> t.getCompletedAt() != null)
                 .collect(Collectors.groupingBy(
-                        t -> t.getCompletedAt().getDayOfWeek(),
+                        t -> t.getCompletedAt().toLocalDate(),
                         Collectors.counting()
-                ));
-
-        return countByDay.entrySet().stream()
+                ))
+                .entrySet().stream()
                 .max(Map.Entry.comparingByValue())
-                .map(entry -> entry.getKey().getDisplayName(TextStyle.FULL, Locale.ENGLISH))
+                .map(entry -> entry.getKey().format(
+                        java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                ))
                 .orElse("Not enough data");
     }
 

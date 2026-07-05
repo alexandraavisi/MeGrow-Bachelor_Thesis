@@ -9,6 +9,8 @@ import {
     Alert,
     Modal,
     TextInput,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -329,46 +331,50 @@ export default function ProfileScreen() {
                 animationType="slide"
                 onRequestClose={() => setPasswordModalVisible(false)}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Change Password</Text>
-                            <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{ flex: 1, justifyContent: "flex-end" }}>
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Change Password</Text>
+                                <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
+                                    <Ionicons name="close" size={24} color="#333" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Current Password"
+                                secureTextEntry
+                                value={currentPassword}
+                                onChangeText={setCurrentPassword}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="New Password"
+                                secureTextEntry
+                                value={newPassword}
+                                onChangeText={setNewPassword}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Confirm New Password"
+                                secureTextEntry
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                            />
+
+                            <TouchableOpacity
+                                style={styles.saveButton}
+                                onPress={handleChangePassword}
+                                disabled={isChangingPassword}>
+                                {isChangingPassword
+                                    ? <ActivityIndicator color="#fff" />
+                                    : <Text style={styles.saveButtonText}>Save Changes</Text>
+                                }
                             </TouchableOpacity>
                         </View>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Current Password"
-                            secureTextEntry
-                            value={currentPassword}
-                            onChangeText={setCurrentPassword}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="New Password"
-                            secureTextEntry
-                            value={newPassword}
-                            onChangeText={setNewPassword}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Confirm New Password"
-                            secureTextEntry
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                        />
-
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={handleChangePassword}
-                            disabled={isChangingPassword}>
-                            {isChangingPassword
-                                ? <ActivityIndicator color="#fff" />
-                                : <Text style={styles.saveButtonText}>Save Changes</Text>
-                            }
-                        </TouchableOpacity>
-                    </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
         </ScrollView>
@@ -583,7 +589,6 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "flex-end",
     },
     modalContainer: {
         backgroundColor: "#fff",

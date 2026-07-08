@@ -41,4 +41,8 @@ public class UserStats {
 
     @Column(name = "rescue_mode_since")
     private LocalDate rescueModeSince;
+
+    @Column(name = "flower_reset_xp", nullable = false)
+    @Builder.Default
+    private int flowerResetXp = 1000;
 }

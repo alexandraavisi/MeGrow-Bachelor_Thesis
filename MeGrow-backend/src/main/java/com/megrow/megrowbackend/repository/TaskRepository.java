@@ -1,6 +1,7 @@
 package com.megrow.megrowbackend.repository;
 
 import com.megrow.megrowbackend.entities.Task;
+import com.megrow.megrowbackend.enums.TaskSource;
 import com.megrow.megrowbackend.enums.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByUserIdAndScheduledDateAndParentTaskIsNull(UUID userId, LocalDate date);
     List<Task> findByParentTaskId(UUID parentTaskId);
     List<Task> findByUserIdAndStatus(UUID userId, TaskStatus status);
+    List<Task> findByUserIdAndScheduledDateAndSource(UUID userId, LocalDate date, TaskSource source);
 
     @Query("SELECT COALESCE(SUM(t.estimatedMinutes), 0) FROM Task t " +
             "WHERE t.user.id = :userId AND t.scheduledDate = :date " +

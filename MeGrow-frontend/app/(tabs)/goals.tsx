@@ -1,4 +1,4 @@
-import { 
+import {
     View,
     Text,
     StyleSheet,
@@ -6,6 +6,8 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
  } from "react-native";
 import { useState, useCallback} from "react";
 import {useRouter, useFocusEffect} from "expo-router";
@@ -246,7 +248,9 @@ export default function GoalsScreen() {
                 transparent
                 animationType="slide"
                 onRequestClose={() => setModalVisible(false)}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>New Goal</Text>
@@ -255,7 +259,9 @@ export default function GoalsScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
                             {/* Category */}
                             <Text style={styles.fieldLabel}>Category</Text>
                             <View style={styles.categoryContainer}>
@@ -390,7 +396,7 @@ export default function GoalsScreen() {
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
         </ScrollView>

@@ -92,6 +92,7 @@ public class UserStatsService {
 
         if (daysSinceActivity >= 3 && stats.getRescueModeSince() == null) {
             stats.setRescueModeSince(LocalDate.now());
+            stats.setFlowerResetXp(stats.getXpTotal());
             userStatsRepository.save(stats);
         }
 

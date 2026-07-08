@@ -68,6 +68,12 @@ export default function TaskDetailScreen() {
             } else {
                 setSeconds(taskResponse.data.estimatedMinutes * 60);
             }
+
+            const running = taskResponse.data.status === "IN_PROGRESS";
+            setIsRunning(running);
+            if (running) {
+                startTimer();
+            }
         } catch (error) {
             Alert.alert("Error", "Failed to load task");
             router.back();

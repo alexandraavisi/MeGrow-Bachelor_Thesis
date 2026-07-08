@@ -16,4 +16,5 @@ public class UserStatsResponse {
     private short streakDays;
     private LocalDate lastActivityDate;
     private boolean rescueMode;
+    private int flowerResetXp;
 }

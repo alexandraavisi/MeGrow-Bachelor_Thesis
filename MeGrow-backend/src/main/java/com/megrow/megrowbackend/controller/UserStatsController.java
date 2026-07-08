@@ -46,7 +46,8 @@ public class UserStatsController {
                 stats.getTreeHealth(),
                 stats.getStreakDays(),
                 stats.getLastActivityDate(),
-                stats.getRescueModeSince() != null
+                stats.getRescueModeSince() != null,
+                stats.getFlowerResetXp()
         ));
     }
 

@@ -45,6 +45,7 @@ interface UserStats {
     treeHealth: number;
     streakDays: number;
     rescueMode: boolean;
+    flowerResetXp: number;
 }
 
 export default function HomeScreen() {
@@ -220,7 +221,7 @@ export default function HomeScreen() {
                             level={stats.level}
                             health={stats.treeHealth}
                             rescueMode={stats.rescueMode}
-                            flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - 1000) / 50)) : 0}
+                            flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - stats.flowerResetXp) / 50)) : 0}
                             size={100}
                         />
                     </View>

@@ -110,7 +110,7 @@ public class AiBacklogService {
                 ]
                 
                 RULES FOR DETAILS FIELD:
-                        - VOCAB: {"words": ["word1", "word2"], "translations": ["trans1", "trans2"], "example_sentences": ["sentence1"]}
+                        - VOCAB: {"words": ["word1", "word2"], "translations": ["trans1", "trans2"], "example_sentences": ["sentence1"]} - translations must always be in Romanian, regardless of the language being learned
                         - LEARN: {"topics": ["topic1"], "resources": ["resource1"], "key_concepts": ["concept1"]}
                         - LISTEN: {"description": "what to listen to", "source": "podcast/video/song", "focus": "what to pay attention to"}
                         - SPEAK: {"instructions": "what to practice", "example": "example phrase", "challenge": "extra challenge for achievers"}

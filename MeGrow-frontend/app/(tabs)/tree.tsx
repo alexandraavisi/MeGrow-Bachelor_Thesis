@@ -17,6 +17,7 @@ interface UserStats {
     streakDays: number;
     lastActivityDate: string | null;
     rescueMode: boolean;
+    flowerResetXp: number;
 }
 
 export default function TreeScreen() {
@@ -48,7 +49,8 @@ export default function TreeScreen() {
         return "🌱";
     }
 
-    const getTreeMessage = (level: number, health: number) => {
+    const getTreeMessage = (health: number, rescueMode: boolean) => {
+        if (rescueMode) return "Your tree is in rescue mode! Complete tasks to bring it back to life.";
         if (health < 20) return "Your tree needs attention! Complete some habits to help it recover.";
         if (health < 50) return "Your tree is struggling. Keep completing your daily tasks!";
         if (health < 80) return "Your tree is doing well. Keep up the good work!";
@@ -94,7 +96,7 @@ export default function TreeScreen() {
             <TreeVisualization level={stats.level} 
                 health={stats.treeHealth}
                 rescueMode={stats.rescueMode}
-                flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - 1000) / 50)) : 0}
+                flowerCount={stats.level >= 5 ? Math.max(0, Math.floor((stats.xpTotal - stats.flowerResetXp) / 50)) : 0}
             />
             {stats.rescueMode && (
                 <View style={styles.rescueBadge}>
@@ -102,7 +104,7 @@ export default function TreeScreen() {
                 </View>
             )}
             <Text style={styles.treeMessage}>
-                {getTreeMessage(stats.level, stats.treeHealth)}
+                {getTreeMessage(stats.treeHealth, stats.rescueMode)}
             </Text>
         </View>
 
